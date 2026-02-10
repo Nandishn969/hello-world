@@ -24,7 +24,7 @@ jobs:
         run: |
           set -e
 
-          ORG="<YOUR_ORG_NAME>"
+          ORG="Nandishn969"
           BRANCH_NAME="feature/${JIRA_KEY}"
 
           REPOS=(
