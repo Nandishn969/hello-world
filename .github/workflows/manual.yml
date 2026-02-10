@@ -23,7 +23,7 @@ jobs:
           BRANCH_NAME="feature/${JIRA_KEY}"
 
           REPOS=(
-            "hello-world"
+            "New-Actions"
           )
 
           for REPO in "${REPOS[@]}"; do
