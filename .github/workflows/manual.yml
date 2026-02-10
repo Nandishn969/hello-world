@@ -29,7 +29,6 @@ jobs:
 
           REPOS=(
             "hello-world"
-            "New Actions"
           )
 
           for REPO in "${REPOS[@]}"; do
