@@ -6,11 +6,8 @@ on:
       jira_key:
         description: "Jira issue key (e.g. ABC-123)"
         required: true
-      repos:
-        description: "Comma-separated repos (org/repo1,org/repo2)"
-        required: true
       base_branch:
-        description: "Base branch"
+        description: "Base branch name"
         required: false
         default: "main"
 
@@ -19,36 +16,40 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Create branches
+      - name: Create branches in repos
         env:
           GH_TOKEN: ${{ secrets.GH_PAT }}
           JIRA_KEY: ${{ github.event.inputs.jira_key }}
-          REPOS: ${{ github.event.inputs.repos }}
           BASE_BRANCH: ${{ github.event.inputs.base_branch }}
         run: |
           set -e
 
+          ORG="<YOUR_ORG_NAME>"
           BRANCH_NAME="feature/${JIRA_KEY}"
-          IFS=',' read -ra REPO_LIST <<< "$REPOS"
 
-          for REPO in "${REPO_LIST[@]}"; do
-            echo "Processing $REPO"
+          REPOS=(
+            "hello-world"
+            "New Actions"
+          )
+
+          for REPO in "${REPOS[@]}"; do
+            echo "Creating branch in $ORG/$REPO"
 
             BASE_SHA=$(curl -s \
               -H "Authorization: token $GH_TOKEN" \
               -H "Accept: application/vnd.github+json" \
-              https://api.github.com/repos/$REPO/git/ref/heads/$BASE_BRANCH \
+              "https://api.github.com/repos/$ORG/$REPO/git/ref/heads/$BASE_BRANCH" \
               | jq -r .object.sha)
 
             if [ "$BASE_SHA" = "null" ]; then
-              echo "Base branch not found in $REPO"
+              echo "Base branch '$BASE_BRANCH' not found in $REPO"
               continue
             fi
 
             curl -s -X POST \
               -H "Authorization: token $GH_TOKEN" \
               -H "Accept: application/vnd.github+json" \
-              https://api.github.com/repos/$REPO/git/refs \
+              "https://api.github.com/repos/$ORG/$REPO/git/refs" \
               -d "{\"ref\":\"refs/heads/$BRANCH_NAME\",\"sha\":\"$BASE_SHA\"}"
 
             echo "Branch $BRANCH_NAME created in $REPO"
