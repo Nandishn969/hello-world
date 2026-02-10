@@ -9,7 +9,7 @@ on:
       base_branch:
         description: "Base branch name"
         required: false
-        default: "main"
+        default: "master"
 
 jobs:
   create-branches:
