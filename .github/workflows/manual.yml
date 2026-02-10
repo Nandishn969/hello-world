@@ -24,6 +24,8 @@ jobs:
 
           REPOS=(
             "hello-world"
+            "New-Actions"
+            "Jira-Cloud"
           )
 
           for REPO in "${REPOS[@]}"; do
