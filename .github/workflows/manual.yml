@@ -14,7 +14,7 @@ jobs:
     steps:
       - name: Create branches in repos
         env:
-          GH_TOKEN: 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
+          GH_TOKEN: ${{ secrets.GH_PAT }}
           JIRA_KEY: ${{ github.event.inputs.jira_key }}
         run: |
           set -e
