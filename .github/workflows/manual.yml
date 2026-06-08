@@ -14,7 +14,7 @@ jobs:
     steps:
       - name: Create branches in repos
         env:
-          GH_TOKEN: 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
+          GH_TOKEN: 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
           JIRA_KEY: ${{ github.event.inputs.jira_key }}
         run: |
           set -e
@@ -24,6 +24,8 @@ jobs:
 
           REPOS=(
             "hello-world"
+            "New-Actions"
+            "Jira-Cloud"
           )
 
           for REPO in "${REPOS[@]}"; do
