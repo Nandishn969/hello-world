@@ -22,8 +22,6 @@ jobs:
         run: |
           BRANCH="$GITHUB_REF_NAME"
           BRANCH_KEY=$(echo "$BRANCH" | grep -oE '[A-Z]+-[0-9]+' | head -1)
-          BEFORE="${{ github.event.before }}"
-          AFTER="${{ github.event.after }}"
 
           echo "Branch: $BRANCH"
           echo "Branch Key: $BRANCH_KEY"
@@ -34,14 +32,17 @@ jobs:
             exit 0
           fi
 
-          # Get commits (push event)
-          if [ "$BEFORE" = "0000000000000000000000000000000000000000" ]; then
-            COMMITS=$(git log --format="%H|%s" "$AFTER" -10)
-          elif [ -n "$BEFORE" ] && [ -n "$AFTER" ]; then
-            COMMITS=$(git log --format="%H|%s" "$BEFORE..$AFTER")
+          # Determine commits to check
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            COMMITS=$(git log --format="%H|%s" origin/${{ github.base_ref }}..HEAD)
           else
-            # Pull request — check all commits in PR
-            COMMITS=$(git log --format="%H|%s" "origin/${{ github.base_ref }}..HEAD")
+            BEFORE="${{ github.event.before }}"
+            AFTER="${{ github.event.after }}"
+            if [ "$BEFORE" = "0000000000000000000000000000000000000000" ]; then
+              COMMITS=$(git log --format="%H|%s" "$AFTER" -10)
+            else
+              COMMITS=$(git log --format="%H|%s" "$BEFORE..$AFTER")
+            fi
           fi
 
           FAIL=0
@@ -51,13 +52,15 @@ jobs:
             MSG=$(echo "$line" | cut -d'|' -f2-)
             KEY=$(echo "$MSG" | grep -oE '[A-Z]+-[0-9]+' | head -1)
 
+            # Rule 1: Must have a Jira key
             if [ -z "$KEY" ]; then
               echo "❌ [$SHA] Missing Jira key → \"$MSG\""
               FAIL=1
               continue
             fi
 
-            if echo "$BRANCH" | grep -q "^bugfix/" && [ "$KEY" != "$BRANCH_KEY" ]; then
+            # Rule 2: Bugfix — key must match branch key
+            if echo "$BRANCH" | grep -q "^bugfix/" && [ "$(echo $KEY | tr '[:upper:]' '[:lower:]')" != "$(echo $BRANCH_KEY | tr '[:upper:]' '[:lower:]')" ]; then
               echo "❌ [$SHA] Key $KEY ≠ branch key $BRANCH_KEY → \"$MSG\""
               FAIL=1
               continue
@@ -68,7 +71,13 @@ jobs:
 
           echo ""
           if [ "$FAIL" -eq 1 ]; then
-            echo "❌ FAILED"
+            echo "==========================================="
+            echo "❌ VALIDATION FAILED"
+            echo ""
+            echo "Rules:"
+            echo "  • Every commit must include a Jira key (e.g. PASLCM-123)"
+            echo "  • Bugfix branches: commit key must match branch key"
+            echo "==========================================="
             exit 1
           fi
           echo "✅ ALL COMMITS VALID"
